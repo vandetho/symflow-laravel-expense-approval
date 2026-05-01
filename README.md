@@ -121,6 +121,28 @@ The package's `LaraflowServiceProvider` registers a default `WorkflowRegistryInt
 - **Diagram component:** [`app/Livewire/Components/WorkflowDiagram.php`](app/Livewire/Components/WorkflowDiagram.php)
 - **Action panel:** [`resources/views/livewire/pages/expense-show.blade.php`](resources/views/livewire/pages/expense-show.blade.php)
 
+## Deploy free on Fly.io
+
+This repo ships with a `Dockerfile` (FrankenPHP-based, multi-stage, Node for assets) and a `fly.toml` configured for a small machine + a 1 GB persistent volume mounted at `/data` for SQLite.
+
+The Dockerfile rewrites `composer.json` at build time to swap the local **path repo** (used for development against `../symflow-laravel`) for the Packagist release of `vandetho/symflow-laravel` — so deploys don't need the sibling clone.
+
+```bash
+# Once, on your machine:
+brew install flyctl   # or curl -L https://fly.io/install.sh | sh
+fly auth login
+
+# In this directory:
+fly launch --no-deploy --copy-config       # picks up the existing fly.toml
+fly volumes create expense_data --size 1   # the volume mount referenced in fly.toml
+fly secrets set APP_KEY="base64:$(openssl rand -base64 32)"
+fly deploy
+```
+
+The `docker/entrypoint.sh` runs `migrate --force` on every boot and `db:seed` only when the SQLite file is empty — so the first deploy lights up with the demo data, subsequent deploys keep whatever state users leave behind. Wipe by running `fly ssh console -C "rm /data/database.sqlite"` then redeploying.
+
+`auto_stop_machines = "stop"` keeps the demo idle when nobody is using it, so it consumes ~zero of Fly's free allowance. First request after sleep is ~2 s slower while the machine boots.
+
 ## Sibling demos
 
 - [`symflow-laravel-issue-tracker`](https://github.com/vandetho/symflow-laravel-issue-tracker) — a mini Jira-style tracker with parallel code-review + qa-review before merge. Same workflow engine, different domain shape.
