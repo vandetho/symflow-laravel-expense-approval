@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Components;
 
 use Laraflow\Contracts\WorkflowRegistryInterface;
-use Laraflow\Export\MermaidExporter;
+use Laraflow\Data\WorkflowDefinition;
 use Livewire\Component;
 
 class WorkflowDiagram extends Component
@@ -29,27 +29,68 @@ class WorkflowDiagram extends Component
         $registry = app(WorkflowRegistryInterface::class);
         $workflow = $registry->get($this->workflowName);
 
-        $base = MermaidExporter::export($workflow->definition);
-
-        $highlight = "\n    classDef active fill:#10b98120,stroke:#059669,stroke-width:2px,color:#047857,font-weight:600;\n";
-        $highlight .= "    classDef done fill:#0ea5e91a,stroke:#0284c7,stroke-width:1.5px,color:#075985;\n";
-        $highlight .= "    classDef rejected fill:#f43f5e1a,stroke:#e11d48,stroke-width:2px,color:#9f1239,font-weight:600;\n";
-        $highlight .= "    classDef paid fill:#10b9811a,stroke:#059669,stroke-width:2px,color:#065f46,font-weight:600;\n";
-
-        foreach ($this->activePlaces as $place) {
-            $class = match (true) {
-                $place === 'rejected' => 'rejected',
-                $place === 'paid' => 'paid',
-                str_ends_with($place, '_approved') || $place === 'approved' => 'done',
-                default => 'active',
-            };
-            $highlight .= "    class {$place} {$class};\n";
-        }
-
-        $diagram = $base . $highlight;
+        $diagram = $this->buildFlowchart($workflow->definition, $this->activePlaces);
 
         return view('livewire.components.workflow-diagram', [
             'diagram' => $diagram,
         ]);
+    }
+
+    /**
+     * Build a Mermaid flowchart with each place as a rounded node, each transition
+     * as a labelled edge, and active places highlighted via classDef.
+     *
+     * @param  array<string>  $active
+     */
+    private function buildFlowchart(WorkflowDefinition $definition, array $active): string
+    {
+        $lines = [];
+        $lines[] = 'flowchart LR';
+
+        // Place nodes — rounded rectangles with description on a second line.
+        foreach ($definition->places as $place) {
+            $description = $place->metadata['description'] ?? null;
+            $label = $description ? "{$place->name}\\n{$description}" : $place->name;
+            $lines[] = "    {$place->name}([\"{$label}\"])";
+        }
+
+        // Transitions: place → place edges labelled with transition name
+        // For multi-from / multi-to (Petri nets), draw an edge from each from to each to.
+        foreach ($definition->transitions as $t) {
+            $label = $t->name;
+            if ($t->guard !== null) {
+                $label .= " [{$t->guard}]";
+            }
+
+            foreach ($t->froms as $from) {
+                foreach ($t->tos as $to) {
+                    $lines[] = "    {$from} -->|{$label}| {$to}";
+                }
+            }
+        }
+
+        // Style definitions
+        $lines[] = '';
+        $lines[] = '    classDef base fill:#fafafa,stroke:#a1a1aa,stroke-width:1px,color:#27272a';
+        $lines[] = '    classDef active fill:#a7f3d0,stroke:#059669,stroke-width:3px,color:#064e3b,font-weight:700';
+        $lines[] = '    classDef done fill:#bae6fd,stroke:#0284c7,stroke-width:2px,color:#075985,font-weight:600';
+        $lines[] = '    classDef rejected fill:#fecdd3,stroke:#e11d48,stroke-width:3px,color:#9f1239,font-weight:700';
+        $lines[] = '    classDef paid fill:#a7f3d0,stroke:#059669,stroke-width:3px,color:#064e3b,font-weight:700';
+
+        // Apply base to all places, then override active ones
+        $allPlaceNames = array_map(fn ($p) => $p->name, $definition->places);
+        $lines[] = '    class ' . implode(',', $allPlaceNames) . ' base';
+
+        foreach ($active as $place) {
+            $class = match (true) {
+                $place === 'rejected' => 'rejected',
+                $place === 'paid' => 'paid',
+                $place === 'approved', str_ends_with($place, '_approved') => 'done',
+                default => 'active',
+            };
+            $lines[] = "    class {$place} {$class}";
+        }
+
+        return implode("\n", $lines) . "\n";
     }
 }

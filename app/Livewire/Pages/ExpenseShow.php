@@ -8,7 +8,6 @@ use App\Models\ExpenseRequest;
 use App\Workflow\WorkflowReasonContext;
 use Illuminate\Support\Facades\Auth;
 use Laraflow\Contracts\WorkflowRegistryInterface;
-use Laraflow\Data\Transition;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
@@ -69,16 +68,17 @@ class ExpenseShow extends Component
     }
 
     /**
-     * @return array<int, array{transition: Transition, allowed: bool, reason: ?string, intent: string}>
+     * @return array{available: array<int, mixed>, awaiting: array<int, mixed>, inactive: array<int, mixed>}
      */
-    public function getEnabledTransitionsProperty(): array
+    public function getGroupedTransitionsProperty(): array
     {
         $workflow = app(WorkflowRegistryInterface::class)->get('expense_approval');
-        $rows = [];
+
+        $groups = ['available' => [], 'awaiting' => [], 'inactive' => []];
 
         foreach ($workflow->definition->transitions as $transition) {
             $result = $workflow->can($this->expense, $transition->name);
-            $blockerReason = $result->blockers[0]->message ?? null;
+            $blocker = $result->blockers[0] ?? null;
 
             $intent = match (true) {
                 str_starts_with($transition->name, 'reject') => 'destructive',
@@ -87,21 +87,30 @@ class ExpenseShow extends Component
                 default => 'neutral',
             };
 
-            $rows[] = [
+            $row = [
                 'transition' => $transition,
                 'allowed' => $result->allowed,
-                'reason' => $blockerReason,
+                'reason' => $blocker?->message,
+                'code' => $blocker?->code,
                 'intent' => $intent,
             ];
+
+            if ($result->allowed) {
+                $groups['available'][] = $row;
+            } elseif (in_array($blocker?->code, ['not_authenticated', 'wrong_role', 'guard_blocked', 'unknown_guard'], true)) {
+                $groups['awaiting'][] = $row;
+            } else {
+                $groups['inactive'][] = $row;
+            }
         }
 
-        return $rows;
+        return $groups;
     }
 
     public function render()
     {
         return view('livewire.pages.expense-show', [
-            'enabledTransitions' => $this->enabledTransitions,
+            'grouped' => $this->groupedTransitions,
             'activePlaces' => $this->expense->activePlaces(),
             'currentUser' => Auth::user(),
         ]);

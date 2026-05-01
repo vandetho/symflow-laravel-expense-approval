@@ -45,10 +45,18 @@
     </main>
 
     <footer class="border-t border-zinc-200/80 bg-white/50">
-        <div class="mx-auto max-w-7xl px-6 py-6 text-xs text-zinc-500">
-            Showcase for
-            <a href="https://github.com/vandetho/symflow-laravel" class="font-medium text-zinc-700 hover:text-emerald-700">vandetho/symflow-laravel</a>
-            — Symfony-compatible workflow engine for Laravel.
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-6 text-xs text-zinc-500">
+            <div>
+                Showcase for
+                <a href="https://github.com/vandetho/symflow-laravel" class="font-medium text-zinc-700 hover:text-emerald-700">vandetho/symflow-laravel</a>
+                — Symfony-compatible workflow engine for Laravel.
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="https://symflowbuilder.com" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 font-medium text-zinc-700 hover:text-emerald-700">
+                    <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><line x1="10" y1="6.5" x2="14" y2="6.5"/><line x1="6.5" y1="10" x2="6.5" y2="14"/></svg>
+                    Design workflows on symflowbuilder.com
+                </a>
+            </div>
         </div>
     </footer>
 </div>
