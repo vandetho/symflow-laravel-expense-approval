@@ -84,7 +84,9 @@
             </a>
         </div>
         <div class="p-2">
-            <iframe src="https://symflowbuilder.com/embed/9e50940e6f0e0d02?branding=0&minimap=0"
+            @php $embedMarking = implode(',', array_map('urlencode', $activePlaces)); @endphp
+            <iframe wire:key="symflowbuilder-iframe-{{ $embedMarking }}"
+                    src="https://symflowbuilder.com/embed/9e50940e6f0e0d02?branding=0&minimap=0{{ $embedMarking !== '' ? '&marking='.$embedMarking : '' }}"
                     width="100%" height="500"
                     class="rounded-lg"
                     style="border:0"
