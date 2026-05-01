@@ -1,0 +1,130 @@
+# Symflow Expense Approval
+
+A runnable showcase for [`vandetho/symflow-laravel`](https://github.com/vandetho/symflow-laravel) — a Symfony-compatible workflow engine for Laravel. This app implements a multi-stage expense approval flow that exercises **Petri net semantics** (parallel review tracks), **role-based guards**, **transition middleware**, **event listeners**, and **live diagram rendering**.
+
+## What it demonstrates
+
+| Engine feature | Where you see it |
+|---|---|
+| Petri-net AND-split | `submit` fans `draft` → `legal_review`, `finance_review`, `manager_review` in one transition |
+| Petri-net AND-join | `finalize` consumes a token from each `*_approved` place and produces one in `approved` |
+| Guards | `approve_legal`, `approve_finance`, `approve_manager`, `pay` are role-gated via `RoleGuardEvaluator` |
+| `GuardResult` with reason/code | UI surfaces *why* a transition is blocked ("Requires the legal role.") |
+| Middleware | `AuditLogMiddleware` writes a full before/after marking record with actor + reason for every fired transition |
+| Workflow event listeners | `WorkflowEventType::Entered` listener logs each hop (see `WorkflowServiceProvider::boot`) |
+| Live diagram | `MermaidExporter` output is augmented with `classDef` so active places light up in real time |
+
+## Quick start
+
+Requires PHP 8.2+, Composer, Node 20+, and a clone of [`symflow-laravel`](https://github.com/vandetho/symflow-laravel) sitting at `../symflow-laravel` (the package is consumed via a Composer **path repository**).
+
+```bash
+git clone https://github.com/vandetho/symflow-laravel.git           # sibling, required by the path repo
+git clone https://github.com/vandetho/symflow-laravel-expense-approval.git
+
+cd symflow-laravel-expense-approval
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate:fresh --seed
+npm run build
+php artisan serve
+```
+
+Open <http://localhost:8000>, then use the **role switcher** in the top-right to sign in as a demo user. Different roles unlock different transitions on each expense detail page.
+
+### Seeded users
+
+| Role | Name | Email | Password |
+|---|---|---|---|
+| Employee | Ada Lovelace | `ada@acme.test` | `password` |
+| Employee | Grace Hopper | `grace@acme.test` | `password` |
+| Manager | Linus Torvalds | `linus@acme.test` | `password` |
+| Finance | Marie Curie | `marie@acme.test` | `password` |
+| Legal | Hedy Lamarr | `hedy@acme.test` | `password` |
+
+## The workflow
+
+Defined in [`config/laraflow.php`](config/laraflow.php):
+
+```
+                             ┌─ legal_review ──── approve_legal ────┐
+                             │   reject_legal ─┐                    ▼
+draft ── submit ─────────────┼─ finance_review ── approve_finance ──┤
+                             │   reject_finance ┐                   ▼
+                             └─ manager_review ── approve_manager ──┘
+                                                                    │
+        ┌──────────── (any reject) ──────────────► rejected         ▼
+        │                                                        finalize
+        │                                                            │
+        │                                                            ▼
+        │                                                         approved
+        │                                                            │
+        │                                                            ▼
+        └────────────────────────────────────────────────────────── pay ──► paid
+```
+
+It's a `workflow` (Petri net) — not a state machine — because `submit` and `finalize` operate on multiple tokens simultaneously.
+
+## Architecture
+
+```
+app/
+├── Enums/Role.php                          # employee | legal | finance | manager
+├── Models/
+│   ├── ExpenseRequest.php                  # uses HasWorkflowTrait, marking stored as JSON
+│   ├── ExpenseAuditLog.php                 # written to by AuditLogMiddleware
+│   └── User.php
+├── Workflow/
+│   ├── RoleGuardEvaluator.php              # implements GuardEvaluatorInterface, parses "role:X"
+│   ├── AuditLogMiddleware.php              # captures before/after marking on every transition
+│   └── WorkflowReasonContext.php           # tiny request-scoped store for transition reasons
+├── Providers/
+│   └── WorkflowServiceProvider.php         # rebinds the registry with our guard + middleware
+└── Livewire/
+    ├── Components/
+    │   ├── RoleSwitcher.php                # demo-mode "sign in as" dropdown
+    │   └── WorkflowDiagram.php             # Mermaid output + classDef highlighting
+    └── Pages/
+        ├── Dashboard.php                   # kanban / table view
+        ├── ExpenseCreate.php               # new draft form
+        └── ExpenseShow.php                 # detail page with action panel + audit timeline
+```
+
+### How the registry is wired
+
+The package's `LaraflowServiceProvider` registers a default `WorkflowRegistryInterface` singleton that constructs `Workflow` objects without a guard evaluator. We override it in [`app/Providers/WorkflowServiceProvider.php`](app/Providers/WorkflowServiceProvider.php) so each workflow is built with our `RoleGuardEvaluator`, then attach `AuditLogMiddleware` and a logging listener in `boot()`.
+
+### How a transition fires
+
+1. Livewire button → `ExpenseShow::fire('approve_legal')`
+2. `Workflow::can()` runs the guard. With no auth, returns `not_authenticated`. With wrong role, returns `wrong_role` and the UI shows "Requires the legal role."
+3. `WorkflowReasonContext::set($this->reason)` stashes the optional note
+4. `Workflow::apply()` runs the engine: emits guard / leave / transition / enter / entered / completed / announce events, walking through the configured middleware
+5. `AuditLogMiddleware` captures `(actor, transition, marking_before, marking_after, reason)` to the `expense_audit_logs` table
+6. `WorkflowEventType::Entered` listener logs the hop via `Log::info`
+7. `PropertyMarkingStore::write` updates the in-memory `marking` attribute
+8. Livewire calls `$expense->save()` to persist the new marking
+
+### Diagram highlighting
+
+`MermaidExporter::export($definition)` produces the base diagram. The `WorkflowDiagram` Livewire component appends `classDef` rules and `class <place> active` lines so whatever places are currently marked light up in real time — `*_approved` uses a sky tone, `rejected` flashes rose, `paid` glows emerald.
+
+## Files of interest
+
+- **Workflow definition:** [`config/laraflow.php`](config/laraflow.php)
+- **Guard evaluator:** [`app/Workflow/RoleGuardEvaluator.php`](app/Workflow/RoleGuardEvaluator.php)
+- **Audit middleware:** [`app/Workflow/AuditLogMiddleware.php`](app/Workflow/AuditLogMiddleware.php)
+- **Registry override:** [`app/Providers/WorkflowServiceProvider.php`](app/Providers/WorkflowServiceProvider.php)
+- **Diagram component:** [`app/Livewire/Components/WorkflowDiagram.php`](app/Livewire/Components/WorkflowDiagram.php)
+- **Action panel:** [`resources/views/livewire/pages/expense-show.blade.php`](resources/views/livewire/pages/expense-show.blade.php)
+
+## Sibling demos
+
+- [`symflow-laravel-issue-tracker`](https://github.com/vandetho/symflow-laravel-issue-tracker) — a mini Jira-style tracker with parallel code-review + qa-review before merge. Same workflow engine, different domain shape.
+
+## License
+
+MIT.

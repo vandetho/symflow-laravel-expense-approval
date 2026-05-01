@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* Mermaid diagram styling overrides for highlighting active places */
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+
+.mermaid .stateGroup .active rect,
+.mermaid .stateGroup .active polygon,
+.mermaid g.statediagram-state.active > rect {
+    fill: #10b98120 !important;
+    stroke: #059669 !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid g.statediagram-state.active .nodeLabel {
+    color: #047857 !important;
+    font-weight: 600 !important;
+}
