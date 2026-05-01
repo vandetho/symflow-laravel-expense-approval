@@ -14,26 +14,66 @@ A runnable showcase for [`vandetho/symflow-laravel`](https://github.com/vandetho
 | Workflow event listeners | `WorkflowEventType::Entered` listener logs each hop (see `WorkflowServiceProvider::boot`) |
 | Live diagram | `MermaidExporter` output is augmented with `classDef` so active places light up in real time |
 
-## Quick start
+## The flow
 
-Requires PHP 8.2+, Composer, Node 20+, and a clone of [`symflow-laravel`](https://github.com/vandetho/symflow-laravel) sitting at `../symflow-laravel` (the package is consumed via a Composer **path repository**).
+```mermaid
+flowchart LR
+    draft([draft]) -->|submit| LR[legal_review]
+    draft -->|submit| FR[finance_review]
+    draft -->|submit| MR[manager_review]
+
+    LR -->|"approve_legal&nbsp;&#40;role:legal&#41;"| LA[legal_approved]
+    FR -->|"approve_finance&nbsp;&#40;role:finance&#41;"| FA[finance_approved]
+    MR -->|"approve_manager&nbsp;&#40;role:manager&#41;"| MA[manager_approved]
+
+    LR -->|"reject_legal"| rejected([rejected])
+    FR -->|"reject_finance"| rejected
+    MR -->|"reject_manager"| rejected
+
+    LA -->|finalize| approved([approved])
+    FA -->|finalize| approved
+    MA -->|finalize| approved
+
+    approved -->|"pay&nbsp;&#40;role:finance&#41;"| paid([paid])
+
+    classDef good fill:#bbf7d0,stroke:#16a34a,color:#14532d;
+    classDef bad fill:#fecdd3,stroke:#e11d48,color:#9f1239;
+    class paid,approved good;
+    class rejected bad;
+```
+
+It is a `workflow` (Petri net), not a state machine — `submit` and `finalize` operate on multiple tokens simultaneously.
+
+## Run it locally
+
+Requires **PHP 8.2+**, **Composer**, **Node 20+**, and a clone of [`symflow-laravel`](https://github.com/vandetho/symflow-laravel) sitting at `../symflow-laravel` (the package is consumed via a Composer **path repository**).
 
 ```bash
-git clone https://github.com/vandetho/symflow-laravel.git           # sibling, required by the path repo
+# 1. Clone both repos as siblings
+git clone https://github.com/vandetho/symflow-laravel.git
 git clone https://github.com/vandetho/symflow-laravel-expense-approval.git
 
+# 2. Install
 cd symflow-laravel-expense-approval
 composer install
 npm install
+
+# 3. Configure
 cp .env.example .env
 php artisan key:generate
 touch database/database.sqlite
+
+# 4. Build database + frontend
 php artisan migrate:fresh --seed
 npm run build
+
+# 5. Serve
 php artisan serve
 ```
 
 Open <http://localhost:8000>, then use the **role switcher** in the top-right to sign in as a demo user. Different roles unlock different transitions on each expense detail page.
+
+> **Tip — live frontend reload:** in a second terminal run `npm run dev` instead of `npm run build` and Vite hot-reloads CSS/JS changes.
 
 ### Seeded users
 
@@ -45,28 +85,9 @@ Open <http://localhost:8000>, then use the **role switcher** in the top-right to
 | Finance | Marie Curie | `marie@acme.test` | `password` |
 | Legal | Hedy Lamarr | `hedy@acme.test` | `password` |
 
-## The workflow
+## The workflow definition
 
-Defined in [`config/laraflow.php`](config/laraflow.php):
-
-```
-                             ┌─ legal_review ──── approve_legal ────┐
-                             │   reject_legal ─┐                    ▼
-draft ── submit ─────────────┼─ finance_review ── approve_finance ──┤
-                             │   reject_finance ┐                   ▼
-                             └─ manager_review ── approve_manager ──┘
-                                                                    │
-        ┌──────────── (any reject) ──────────────► rejected         ▼
-        │                                                        finalize
-        │                                                            │
-        │                                                            ▼
-        │                                                         approved
-        │                                                            │
-        │                                                            ▼
-        └────────────────────────────────────────────────────────── pay ──► paid
-```
-
-It's a `workflow` (Petri net) — not a state machine — because `submit` and `finalize` operate on multiple tokens simultaneously.
+Lives in [`config/laraflow.php`](config/laraflow.php) — same Symfony `framework.workflows` shape symflowbuilder.com exports.
 
 ## Architecture
 
