@@ -143,6 +143,13 @@ The `docker/entrypoint.sh` runs `migrate --force` on every boot and `db:seed` on
 
 `auto_stop_machines = "stop"` keeps the demo idle when nobody is using it, so it consumes ~zero of Fly's free allowance. First request after sleep is ~2 s slower while the machine boots.
 
+## Edit the workflow visually
+
+This workflow is also published on [symflowbuilder.com](https://symflowbuilder.com) — a React Flow-based visual editor by the same author that exports Symfony-compatible YAML.
+
+- **Open the editor:** https://symflowbuilder.com/editor/cmomjhqh10000lcqgtevh37je
+- **Round-trip:** drag/edit nodes there, export YAML, paste the workflow block into [`config/laraflow.php`](config/laraflow.php). Or the other way around — `workflow.yaml` in this repo is already in the import format symflowbuilder expects.
+
 ## Sibling demos
 
 - [`symflow-laravel-issue-tracker`](https://github.com/vandetho/symflow-laravel-issue-tracker) — a mini Jira-style tracker with parallel code-review + qa-review before merge. Same workflow engine, different domain shape.
