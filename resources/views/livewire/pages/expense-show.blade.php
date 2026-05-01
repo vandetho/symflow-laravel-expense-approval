@@ -77,7 +77,7 @@
                 <h2 class="text-sm font-semibold tracking-tight text-zinc-900">Canonical canvas</h2>
                 <p class="mt-0.5 text-xs text-zinc-500">Live, pan-and-zoomable embed from symflowbuilder.com — same workflow, no per-request state.</p>
             </div>
-            <a href="https://symflowbuilder.com/w/9e50940e6f0e0d02" target="_blank" rel="noopener"
+            <a href="https://symflowbuilder.com/w/86b557637fa5a7aa" target="_blank" rel="noopener"
                class="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-emerald-300 hover:text-emerald-700">
                 Open full size
                 <svg class="size-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 1 0 0 2h2.586L7.293 11.293a1 1 0 1 0 1.414 1.414L15 6.414V9a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-5z"/><path d="M5 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3a1 1 0 1 0-2 0v3H5V7h3a1 1 0 1 0 0-2H5z"/></svg>
@@ -86,7 +86,7 @@
         <div class="p-2">
             @php $embedMarking = implode(',', array_map('urlencode', $activePlaces)); @endphp
             <iframe wire:key="symflowbuilder-iframe-{{ $embedMarking }}"
-                    src="https://symflowbuilder.com/embed/9e50940e6f0e0d02?branding=0&minimap=0{{ $embedMarking !== '' ? '&marking='.$embedMarking : '' }}"
+                    src="https://symflowbuilder.com/embed/86b557637fa5a7aa?branding=0&minimap=0{{ $embedMarking !== '' ? '&marking='.$embedMarking : '' }}"
                     width="100%" height="500"
                     class="rounded-lg"
                     style="border:0"
