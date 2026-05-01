@@ -59,12 +59,16 @@ class WorkflowDiagram extends Component
         foreach ($definition->transitions as $t) {
             $label = $t->name;
             if ($t->guard !== null) {
-                $label .= " [{$t->guard}]";
+                $label .= " ({$t->guard})";
             }
+
+            // Quoted edge label — Mermaid otherwise treats [ ] / { } in the label
+            // as node-shape delimiters and bails with a parse error.
+            $quoted = '"' . str_replace('"', '#quot;', $label) . '"';
 
             foreach ($t->froms as $from) {
                 foreach ($t->tos as $to) {
-                    $lines[] = "    {$from} -->|{$label}| {$to}";
+                    $lines[] = "    {$from} -->|{$quoted}| {$to}";
                 }
             }
         }
