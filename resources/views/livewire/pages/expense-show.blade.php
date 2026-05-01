@@ -61,7 +61,7 @@
             </div>
             <a href="https://symflowbuilder.com/editor/cmomjhqh10000lcqgtevh37je" target="_blank" rel="noopener"
                class="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-600 transition hover:border-emerald-300 hover:text-emerald-700">
-                Edit visually on symflowbuilder.com
+                View on symflowbuilder.com
                 <svg class="size-3" viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 1 0 0 2h2.586L7.293 11.293a1 1 0 1 0 1.414 1.414L15 6.414V9a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-5z"/><path d="M5 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3a1 1 0 1 0-2 0v3H5V7h3a1 1 0 1 0 0-2H5z"/></svg>
             </a>
         </div>
@@ -251,8 +251,8 @@
             </div>
 
             <div class="rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs">
-                <h2 class="text-sm font-semibold tracking-tight text-zinc-900">Design this workflow visually</h2>
-                <p class="mt-1 text-xs text-zinc-500">Use <a href="https://symflowbuilder.com/editor/cmomjhqh10000lcqgtevh37je" target="_blank" rel="noopener" class="font-medium text-emerald-700 hover:underline">symflowbuilder.com</a> — drag-and-drop editor that exports YAML/JSON for symflow-laravel.</p>
+                <h2 class="text-sm font-semibold tracking-tight text-zinc-900">View on symflowbuilder.com</h2>
+                <p class="mt-1 text-xs text-zinc-500">Inspect the canonical canvas at <a href="https://symflowbuilder.com/editor/cmomjhqh10000lcqgtevh37je" target="_blank" rel="noopener" class="font-medium text-emerald-700 hover:underline">symflowbuilder.com</a> — sign in there to fork and edit your own copy.</p>
             </div>
         </div>
     </div>
