@@ -86,7 +86,7 @@
         <div class="p-2">
             @php $embedMarking = implode(',', array_map('urlencode', $activePlaces)); @endphp
             <iframe wire:key="symflowbuilder-iframe-{{ $embedMarking }}"
-                    src="https://symflowbuilder.com/embed/86b557637fa5a7aa?branding=0&minimap=0{{ $embedMarking !== '' ? '&marking='.$embedMarking : '' }}"
+                    src="https://symflowbuilder.com/embed/86b557637fa5a7aa?branding=0&minimap=0&scenario=0{{ $embedMarking !== '' ? '&marking='.$embedMarking : '' }}"
                     width="100%" height="500"
                     class="rounded-lg"
                     style="border:0"
